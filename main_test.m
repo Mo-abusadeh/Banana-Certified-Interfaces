@@ -131,7 +131,7 @@ title(sprintf('PSTH (Spike Count) - Neuron %d, Angle %d', neuron_id, angle_id));
 
 figure; 
 
-trial_id = 30; % taking the first trial for every angle
+trial_id = 1; % taking the first trial for every angle
 
 colour_pos = jet(num_angles);
 
@@ -154,3 +154,97 @@ title(sprintf('Trial %d', trial_id));
 xlabel('X Position (mm)');
 ylabel('Y Position (mm)');
 
+
+%% Q7: Population Vector Algorithm Implementation
+
+% should turn into a separate function later
+
+% Get number of intervals (timestamps)
+num_timestamps = size(trial(1,1).spikes,2);
+
+%initialise preferred directions and firing rates
+preferred_dirs = zeros(num_neurons,1);
+firing_rates = zeros(num_neurons, num_timestamps);
+
+trial_id = 1;
+
+%% Q7 Part 1: Determine Preferred Directions
+for neuron = 1:num_neurons
+
+    % initialising firing rate sums and counts for every directional bin
+    bin_sums = zeros(num_bins,1);
+    bin_counts = zeros(num_bins,1);
+
+    % Looping through trials for every angle
+    for angle = 1:num_angles
+        for trial_id = 1:num_trials
+
+            % Get Spikes for every trial
+            spikes = trial(trial_id, angle).spikes(neuron, :);
+
+            % Average firing rate for the trial
+            avg_firing_rate = sum(spikes) / (num_timestamps * 1000); % converted to spikes per second
+
+            % Add to direction bin
+            bin_sums(angle) = bin_sums(angle) + avg_firing_rate;
+            bin_counts(angle) = bin_counts(angle) + 1;
+        end
+    end
+
+    % Average firing rate for every direction bin
+    bin_avgs = bin_sums ./ bin_counts;
+
+    % bin with highest avg firing rate
+    [~, preferred_bin] = max(bin_avgs);
+
+    % convert preferred bin into an angle (radians)
+    preferred_dirs(neuron) = (preferred_bin - 1) * 2 * pi / num_bins;
+end 
+
+
+%% Q7 Part 2: Calculate Firing Rates
+
+window_size = 100; % ±50 ms
+
+for neuron = 1:num_neurons
+    for timestamp = 1:num_timestamps
+
+        % Find start and end of windows
+        window_start = max(1,timestamp - window_size/2);
+        window_end = min(num_timesteps);
+
+
+        %Count the spikes in the window 
+        spike_count = sum(spikeMatrix(neuron, window_start:window_end, trial_id,angle));
+
+        % Calculate firing rate firing rate (spikes per second)
+        firing_rates(neuron, timestamp) = spike_count / (window_size * 1000);
+    end 
+end 
+
+
+%% Q7 Part 3 Build a Population Vector
+population_vectors = zeros(2, num_timesteps);
+
+for timestep = 1:num_timesteps
+    % Initialize the population vector for this timestep
+    population_vector = [0; 0];
+
+    for neuron = 1:num_neurons
+        % Get the preferred direction and firing rate for this neuron
+        preferred_dir = preferred_dirs(neuron);
+        firing_rate = firing_rates(neuron, timestep);
+
+        % Create a vector in the preferred direction with length proportional to the firing rate
+        neuron_vector = [cos(preferred_dir); sin(preferred_dir)] * firing_rate;
+
+        % Add to the population vector
+        population_vector = population_vector + neuron_vector;
+    end
+
+    % Store the population vector for this timestep
+    population_vectors(:, timestep) = population_vector;
+end
+
+
+%% Build a regression model to predict the trajectories
