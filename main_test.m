@@ -25,6 +25,7 @@
 
 %%
 % Load the data
+clc; clear all; close all;
 load('monkeydata_training.mat')
 
 %%
@@ -62,7 +63,7 @@ trial_id = 100;
 spike_data = spikeMatrix(:,:,trial_id, angle_id); % 98 x Time matrix (not all trials have 672 samples)
 trial_length = size(spike_data, 2);
 
-figure;
+figure('Name', 'Q1: Raster Plot for a Single Trial');
 hold on;
 for neuron_id = 1:size(spike_data, 1) 
     spike_times = find(spike_data(neuron_id, :) == 1); 
@@ -80,7 +81,7 @@ hold off;
 
 %% Q2
 % Raster plot for one neuron across all trials
-figure;
+figure('Name', 'Q2: Raster plot for one neuron across all trials');
 hold on;
 
 colors = jet(num_trials); 
@@ -113,13 +114,13 @@ spike_counts = zeros(1, num_bins);
 for n = 1:num_trials
     spike_times = find(trial(n, angle_id).spikes(neuron_id, :) == 1); 
     for t = 1:num_bins
-        t_start = (t-1) * bin_size + 1; % setting  the initial snd end time for each time bin (bin1(1ms-10ms) bin2(11ms-20ms))...
+        t_start = (t-1) * bin_size + 1; % setting  the initial and end time for each time bin (bin1(1ms-10ms) bin2(11ms-20ms))...
         t_end = min(t * bin_size, max_len); 
         spike_counts(t) = spike_counts(t) + sum(spike_times >= t_start & spike_times < t_end);
     end
 end
 
-figure;
+figure('Name', 'Q3: PSTH plot for a given neuron and angle');
 bar((1:num_bins) * bin_size, spike_counts, 'k'); % Black bars
 xlabel('Time (ms)');
 ylabel('Spike Count');
@@ -128,8 +129,7 @@ title(sprintf('PSTH (Spike Count) - Neuron %d, Angle %d', neuron_id, angle_id));
 
 %% Q4: Hand Positions for trials across different angles
 
-
-figure; 
+figure('Name', 'Q4: Hand Positions for trials across different angles'); 
 
 trial_id = 1; % taking the first trial for every angle
 
@@ -153,6 +153,55 @@ end
 title(sprintf('Trial %d', trial_id));
 xlabel('X Position (mm)');
 ylabel('Y Position (mm)');
+
+%% Q5
+% For several neurons, plot tuning curves for movement direction
+
+figure('Name', 'Q5: Tuning Curves for Movement Direction');
+hold on;
+
+angles = linspace(0, 360, num_angles+1); % create x axis of plot with angles in degrees
+angles = angles(1:end-1); 
+
+num_neurons_to_plot = 5; % number of neurons we want to plot
+selected_neurons = randperm(num_neurons, num_neurons_to_plot); % select random neurons
+
+colours = jet(num_neurons_to_plot);
+
+for i = 1:num_neurons_to_plot
+    neuron_id = selected_neurons(i);
+    mean_firing_rates = zeros(1, num_angles); % store mean firing rate per angle
+    std_firing_rates = zeros(1,num_angles); % store standard deviations per angle
+
+    firing_rates = zeros(num_angles, num_trials);
+
+    for angle_id = 1:num_angles
+        total_spikes = 0;
+        for trial_id = 1:num_trials
+            % compute total spikes for a neuron across all trials for certain angle
+            total_spikes = total_spikes + sum(trial(trial_id, angle_id).spikes(neuron_id, :)); 
+            
+            % store firing rates 
+            firing_rates(angle_id, trial_id) = sum(trial(trial_id, angle_id).spikes(neuron_id, :)) /...
+                size(trial(trial_id, angle_id).spikes(neuron_id, :),2);
+        end
+        mean_firing_rates(angle_id) = total_spikes / num_trials; % compute average firing rate per angle
+        std_firing_rates(angle_id) = std(firing_rates(angle_id, :)); % compute variability across trials 
+    end
+
+    plot(angles, mean_firing_rates, '-o', 'LineWidth', 2, 'Color', colours(i,:), ...
+        'DisplayName', sprintf('Neuron %d', neuron_id));
+    errorbar(angles, mean_firing_rates, std_firing_rates, 'o', ...
+        'Color', colours(i, :), 'CapSize', 10, 'LineWidth', 1.5, ...
+        'HandleVisibility', 'off'); % plot error bars and hide from legend
+end
+
+xlabel('Movement Direction (°)');
+ylabel('Average Firing Rate (spikes/sec)');
+title('Tuning Curves for Multiple Neurons');
+legend();
+grid on;
+hold off;
 
 
 %% Q7: Population Vector Algorithm Implementation
