@@ -6,13 +6,13 @@
 
 function RMSE = testFunction_for_students_MTb(teamName)
 
-load monkeydata0.mat
+load monkeydata_training.mat
 
 % Set random number generator
 rng(2013);
 ix = randperm(length(trial));
 
-addpath(teamName);
+addpath('Banana-Certified Interfaces');
 
 % Select training and testing data (you can choose to split your data in a different way if you wish)
 trainingData = trial(ix(1:50),:);
@@ -70,6 +70,6 @@ legend('Decoded Position', 'Actual Position')
 
 RMSE = sqrt(meanSqError/n_predictions) 
 
-rmpath(genpath(teamName))
+rmpath(genpath('Banana-Certified Interfaces'))
 
 end
