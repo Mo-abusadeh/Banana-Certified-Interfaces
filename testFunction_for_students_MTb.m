@@ -4,15 +4,17 @@
 % the relevant modelParameters, and then calls the function
 % "positionEstimator" to decode the trajectory. 
 
+%clc; clear all; close all;
+
 function RMSE = testFunction_for_students_MTb(teamName)
 
-load monkeydata0.mat
+load monkeydata_training.mat
 
 % Set random number generator
 rng(2013);
 ix = randperm(length(trial));
 
-addpath(teamName);
+addpath("Banana-Certified-Interfaces");
 
 % Select training and testing data (you can choose to split your data in a different way if you wish)
 trainingData = trial(ix(1:50),:);
@@ -29,7 +31,8 @@ axis square
 grid
 
 % Train Model
-modelParameters = positionEstimatorTraining(trainingData);
+%modelParameters = positionEstimatorTraining(trainingData);
+modelParameters = struct('slopes',[1,1], 'intercepts',[0,0]);
 
 for tr=1:size(testData,1)
     display(['Decoding block ',num2str(tr),' out of ',num2str(size(testData,1))]);

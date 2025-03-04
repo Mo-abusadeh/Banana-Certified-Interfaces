@@ -232,7 +232,7 @@ for neuron = 1:num_neurons
             spikes = trial(trial_id, angle).spikes(neuron, :);
 
             % Average firing rate for the trial
-            avg_firing_rate = sum(spikes) / (num_timestamps * 1000); % converted to spikes per second
+            avg_firing_rate 0= sum(spikes) / (num_timestamps * 1000); % converted to spikes per second
 
             % Add to direction bin
             bin_sums(angle) = bin_sums(angle) + avg_firing_rate;
