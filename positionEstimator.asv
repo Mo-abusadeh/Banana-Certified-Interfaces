@@ -1,7 +1,6 @@
 function [x, y] = positionEstimator(test_data, modelParameters)
 
   % **********************************************************
-  % MULTIVARIATE LINEAR REGRESSION ESTIMATOR
   %
   % You can also use the following function header to keep your state
   % from the last iteration

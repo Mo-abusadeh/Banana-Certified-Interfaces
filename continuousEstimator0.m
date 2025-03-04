@@ -1,4 +1,5 @@
-%%% Team Members: WRITE YOUR TEAM MEMBERS' NAMES HERE
+%%% Team Members: Mohammed Abusadeh, Erik Garcia Oyono, Virginia Greco,
+%%% Helena Kosovac Godart, Anna Pahl
 %%% BMI Spring 2015 (Update 17th March 2015)
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,6 +114,8 @@ function [x, y] = positionEstimator(test_data, modelParameters)
   
   % Return Value:
   [x, y] = data.decodedHandPos;
+  x = x_estimate;
+  y = y_estimate;
    
 end
 
