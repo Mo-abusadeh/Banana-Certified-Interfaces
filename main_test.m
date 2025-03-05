@@ -245,6 +245,3 @@ for timestep = 1:num_timesteps
     % Store the population vector for this timestep
     population_vectors(:, timestep) = population_vector;
 end
-
-
-%% Build a regression model to predict the trajectories
