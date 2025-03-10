@@ -20,42 +20,67 @@ function [modelParameters] = positionEstimatorTraining_v2(training_data)
         for trial = 1:num_trials
             spikes = training_data(trial, angle).spikes; % spikes trains for 98 neurons
             trial_handPos = training_data(trial,angle).handPos(1:2, :); % handPos (x,y) 2xN (N time instances)
-            for neuron = 1:num_neurons 
-                % Calculate the total firing rate for all neurons in the trial
-                total_spikes = sum(spikes(neuron,:), 2); 
-                firing_rate = sum(total_spikes) / size(spikes(neuron,:), 2); 
-            
-                % Calculate the cumulative Fano factor  
-                mean_spikes = mean(spikes(neuron,:)); 
-                var_spikes = var(spikes(neuron,:));  
-                fano_factor = var_spikes / mean_spikes;
+
+            % Average over timesteps
+            duration = size(trial_handPos(1,:),2);
+            nb_bins = 10;
+            timesteps = floor(duration/nb_bins); % time bins over which we average the features
                 
-                neuron_features(neuron, :) = [firing_rate, total_spikes, mean_spikes, var_spikes, fano_factor]; % Array of features (neurons specific) 98x4
+            for n = 1:nb_bins
+                % Compute start and end times
+                t1 = (n-1) * timesteps;
+                t1 = t1 + 1;
+                t2 = t1 + (timesteps-1);
+
+                % Calculate the total firing rate for all neurons in the trial
+                total_spikes = sum(spikes(:,t1:t2), "all");
+                firing_rate = total_spikes / size(spikes(:,t1:t2)', 2);
+                
+                size(spikes(:,t1:t2));
+
+                % Calculate the Fano factor  
+                mean_spikes = mean(spikes(:,t1:t2),"all"); 
+                var_spikes = var(spikes(:,t1:t2),0,"all");
+                %var_spikes = mean(var_spikes);
+                % fano_factor = var_spikes / mean_spikes
+                
+                binned_features(n,:) = [firing_rate, total_spikes, mean_spikes, var_spikes];
+                                    % Array of features (over all neurons per time bins) ~10x4
+                binned_handPos_x(n,:) = mean(trial_handPos(1,t1:t2));
+                binned_handPos_y(n,:) = mean(trial_handPos(2,t1:t2));
             end
-            trial_features(trial,:,:) = [neuron_features]; % population specific features for every trial 
+            trial_features(trial,:,:) = [binned_features];
+            trial_handPos_x(trial, :, :) = [binned_handPos_x];
+            trial_handPos_y(trial, :, :) = [binned_handPos_y];
         end
         features(angle,:,:,:) = [trial_features];
-        handPos(angle, trial).positions_x = trial_handPos(1,:)';
-        handPos(angle, trial).positions_y = trial_handPos(2,:)';
+        handPos_x(angle,:,:,:) = [trial_handPos_x];
+        handPos_y(angle,:,:,:) = [trial_handPos_y];
     end
 
-
-    % Train the regressor 
+    % Train the regressor
+    
     for angle = 1:num_angles
+        total_coeffs_x = zeros(4,1);
+        total_coeffs_y = zeros(4,1);
         for trial = 1:num_trials
-            duration = size(handPos(angle, trial).positions_x,1);
-            for t = 2:duration
-                curr_x = handPos(angle, trial).positions_x(t);
-                curr_y = handPos(angle, trial).positions_y(t);
-                %size(curr_x)
-                prev_x = handPos(angle, trial).positions_x(t-1);
-                prev_y = handPos(angle, trial).positions_y(t-1);
-                %size(prev_x)
-                slope = (curr_y - prev_y) / (curr_x - prev_x)
-                
+            % Extract training data
+            training_features(1,:) = features(angle, trial, :, 1); % firing rate
+            training_features(2,:) = features(angle, trial, :, 2); % total spikes
 
-            end
-        end
+            training_handPos_x(1,:) = handPos_x(angle, trial,:);
+            training_handPos_y(1,:) = handPos_y(angle, trial,:);
+
+            % Find polynomial coefficients for each feature
+            coeffs_FR_x = fit_polynomial(training_features(1,:), training_handPos_x, 3);
+            coeffs_FR_y = fit_polynomial(training_features(1,:), training_handPos_y, 3);
+            
+            % Running mean over trials (adjusts at each iteration)
+            total_coeffs_x = total_coeffs_x + coeffs_FR_x/num_trials;
+            total_coeffs_y = total_coeffs_y + coeffs_FR_y/num_trials;
+        end 
+        modelParameters(angle).totalcoeffs_x = total_coeffs_x;
+        modelParameters(angle).totalcoeffs_y = total_coeffs_y;
+        modelParameters(angle).
     end
-
 end
