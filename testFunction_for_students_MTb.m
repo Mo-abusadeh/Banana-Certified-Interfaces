@@ -12,7 +12,7 @@ load monkeydata_training.mat
 rng(2013);
 ix = randperm(length(trial));
 
-addpath('Banana-Certified Interfaces');
+% addpath("Banana-Certified Interfaces");
 
 % Select training and testing data (you can choose to split your data in a different way if you wish)
 trainingData = trial(ix(1:50),:);
@@ -30,7 +30,7 @@ axis square
 grid
 
 % Train Model
-modelParameters = positionEstimatorTraining_v2(trainingData);
+modelParameters = positionEstimatorTraining(trainingData);
 
 for tr=1:size(testData,1)
     display(['Decoding block ',num2str(tr),' out of ',num2str(size(testData,1))]);
@@ -48,11 +48,11 @@ for tr=1:size(testData,1)
             past_current_trial.startHandPos = testData(tr,direc).handPos(1:2,1); 
             
             tic;
-            if nargout('positionEstimator_v2') == 3
-                [decodedPosX, decodedPosY, newParameters] = positionEstimator_v2(past_current_trial, modelParameters);
+            if nargout('positionEstimator') == 3
+                [decodedPosX, decodedPosY, newParameters] = positionEstimator(past_current_trial, modelParameters);
                 modelParameters = newParameters;
-            elseif nargout('positionEstimator_v2') == 2
-                [decodedPosX, decodedPosY] = positionEstimator_v2(past_current_trial, modelParameters);
+            elseif nargout('positionEstimator') == 2
+                [decodedPosX, decodedPosY] = positionEstimator(past_current_trial, modelParameters);
             end
 
             elapsedTime = toc;
@@ -76,6 +76,7 @@ legend('Decoded Position', 'Actual Position')
 RMSE = sqrt(meanSqError/n_predictions) 
 fprintf('Total time taken: %.4f seconds\n', totalTime);
 fprintf('Average time per prediction: %.4f seconds\n', totalTime / n_predictions);
+Weighted_rank = 0.9 * RMSE + 0.1 * totalTime
 
 rmpath(genpath('Banana-Certified Interfaces'))
 
