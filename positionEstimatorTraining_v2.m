@@ -79,8 +79,10 @@ function [modelParameters] = positionEstimatorTraining_v2(training_data)
             total_coeffs_x = total_coeffs_x + coeffs_FR_x/num_trials;
             total_coeffs_y = total_coeffs_y + coeffs_FR_y/num_trials;
         end 
-        modelParameters(angle).totalcoeffs_x = total_coeffs_x;
-        modelParameters(angle).totalcoeffs_y = total_coeffs_y;
-        modelParameters(angle).
+        %modelParameters(angle).totalcoeffs_x = total_coeffs_x;
+        %modelParameters(angle).totalcoeffs_y = total_coeffs_y;
+        modelParameters(angle).features = features;
+        modelParameters(angle).handPos_x = handPos_x;
+        modelParameters(angle).handPos_y = handPos_y;
     end
 end
