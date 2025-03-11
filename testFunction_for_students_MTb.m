@@ -21,7 +21,8 @@ testData = trial(ix(51:end),:);
 fprintf('Testing the continuous position estimator...')
 
 meanSqError = 0;
-n_predictions = 0;  
+n_predictions = 0;
+totalTime = 0;
 
 figure
 hold on
@@ -29,7 +30,7 @@ axis square
 grid
 
 % Train Model
-modelParameters = positionEstimatorTraining_v3(trainingData);
+modelParameters = positionEstimatorTraining_v2(trainingData);
 
 for tr=1:size(testData,1)
     display(['Decoding block ',num2str(tr),' out of ',num2str(size(testData,1))]);
@@ -46,12 +47,16 @@ for tr=1:size(testData,1)
 
             past_current_trial.startHandPos = testData(tr,direc).handPos(1:2,1); 
             
-            if nargout('positionEstimator_v3') == 3
-                [decodedPosX, decodedPosY, newParameters] = positionEstimator_v3(past_current_trial, modelParameters);
+            tic;
+            if nargout('positionEstimator_v2') == 3
+                [decodedPosX, decodedPosY, newParameters] = positionEstimator_v2(past_current_trial, modelParameters);
                 modelParameters = newParameters;
-            elseif nargout('positionEstimator_v3') == 2
-                [decodedPosX, decodedPosY] = positionEstimator_v3(past_current_trial, modelParameters);
+            elseif nargout('positionEstimator_v2') == 2
+                [decodedPosX, decodedPosY] = positionEstimator_v2(past_current_trial, modelParameters);
             end
+
+            elapsedTime = toc;
+            totalTime = totalTime + elapsedTime;
             
             decodedPos = [decodedPosX; decodedPosY];
             decodedHandPos = [decodedHandPos decodedPos];
@@ -69,6 +74,8 @@ end
 legend('Decoded Position', 'Actual Position')
 
 RMSE = sqrt(meanSqError/n_predictions) 
+fprintf('Total time taken: %.4f seconds\n', totalTime);
+fprintf('Average time per prediction: %.4f seconds\n', totalTime / n_predictions);
 
 rmpath(genpath('Banana-Certified Interfaces'))
 
