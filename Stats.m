@@ -1,7 +1,7 @@
 RMSE = 28.0238;
-Total time taken: 1.4382 seconds;
-Average time per prediction: 0.0002 seconds;
-Weighted_rank = 25.3570;
+Total time taken: 6.5859 seconds;
+Average time per prediction: 0.0010 seconds;
+Weighted_rank = 25.88;
 
 % In excel:
 % RMSE = 28.109;

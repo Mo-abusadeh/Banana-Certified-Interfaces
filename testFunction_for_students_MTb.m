@@ -30,9 +30,11 @@ axis square
 grid
 
 % Train Model
+tic;
 modelParameters = positionEstimatorTraining(trainingData);
 
 for tr=1:size(testData,1)
+    
     display(['Decoding block ',num2str(tr),' out of ',num2str(size(testData,1))]);
     pause(0.001)
     for direc=randperm(8) 
@@ -47,16 +49,13 @@ for tr=1:size(testData,1)
 
             past_current_trial.startHandPos = testData(tr,direc).handPos(1:2,1); 
             
-            tic;
+            
             if nargout('positionEstimator') == 3
                 [decodedPosX, decodedPosY, newParameters] = positionEstimator(past_current_trial, modelParameters);
                 modelParameters = newParameters;
             elseif nargout('positionEstimator') == 2
                 [decodedPosX, decodedPosY] = positionEstimator(past_current_trial, modelParameters);
             end
-
-            elapsedTime = toc;
-            totalTime = totalTime + elapsedTime;
             
             decodedPos = [decodedPosX; decodedPosY];
             decodedHandPos = [decodedHandPos decodedPos];
@@ -70,6 +69,9 @@ for tr=1:size(testData,1)
         plot(testData(tr,direc).handPos(1,times),testData(tr,direc).handPos(2,times),'b')
     end
 end
+
+elapsedTime = toc;
+totalTime = totalTime + elapsedTime;
 
 legend('Decoded Position', 'Actual Position')
 
