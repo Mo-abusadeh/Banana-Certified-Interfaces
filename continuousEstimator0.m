@@ -92,27 +92,14 @@ function [x, y] = positionEstimator(test_data, modelParameters)
   %             test_data.decodedHandPos = [2.3; 1.5]
   %             test_data.spikes = 98x340 matrix of spiking activity
   
-  % Initialisation
-  t = size(test_data.spikes(2));            % iteration time
-  slopes = modelParameters.slopes;
-  intercepts = modelParameters.intercepts;
-  data = test_data;
-  pos_estimate = data.startHandPos;         % [0,0]
-
-  % Position estimation
-  % x_estimate = pos_estimate(1); 
-  % y_estimate = pos_estimate(2); 
-
-  % Linear multivariate prediction
-  x_estimate = intercepts(1) + slopes(1) * t;
-  y_estimate = intercepts(2) + slopes(2) * t;
-
-  pos_estimate = [x_estimate, y_estimate];
-
-  data.decodedHandPos = pos_estimate;
+  
+  
+  % ... compute position at the given timestep.
   
   % Return Value:
-  [x, y] = data.decodedHandPos;
+  
+  % - [x, y]:
+  %     current position of the hand
    
 end
 
