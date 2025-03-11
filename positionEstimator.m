@@ -1,7 +1,6 @@
 function [x, y] = positionEstimator(test_data, modelParameters)
 
   % **********************************************************
-  % MULTIVARIATE LINEAR REGRESSION ESTIMATOR
   %
   % You can also use the following function header to keep your state
   % from the last iteration
@@ -43,13 +42,23 @@ function [x, y] = positionEstimator(test_data, modelParameters)
   slopes = modelParameters.slopes;
   intercepts = modelParameters.intercepts;
   data = test_data;
-  pos_estimate = data.startHandPos;         % [0,0] 
+  pos_estimate = data.startHandPos;         % [0,0]
+
+  % Position estimation
+  % x_estimate = pos_estimate(1); 
+  % y_estimate = pos_estimate(2); 
     
+ 
   % Linear multivariate prediction
   x_estimate = intercepts(1) + slopes(1) * t;
   y_estimate = intercepts(2) + slopes(2) * t;
+
+  %pos_estimate = [x_estimate, y_estimate];
+
+  %data.decodedHandPos = pos_estimate;
   
   % Return Value:
+  %[x, y] = data.decodedHandPos;
   x = x_estimate;
   y = y_estimate;
    
