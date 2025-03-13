@@ -7,6 +7,8 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
     X = []; % State matrix (position, velocity)
     Z = []; % Observation matrix (spike rates)
     trainingVelocities = [];
+
+    idealDirections = [cosd(0:45:315); sind(0:45:315)]; 
     
     % Collect training data
     binSize = 390;
@@ -38,10 +40,28 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
 
             firingRateChanges = diff(firingRates, 1, 2); % First derivative of firing rates
             firingRateChanges = [zeros(numNeurons, 1), firingRateChanges];
+
+            % Compute Fano Factor
+            spikeCountVariance = var(spikes, 0, 2);
+            spikeCountMean = mean(spikes, 2);
+            fanoFactor = spikeCountVariance ./ (spikeCountMean + 1e-6);
+            fanoFactor = repmat(fanoFactor, 1, size(firingRates,2));
+            %size_f = size(fanoFactor)
+                
+            meanVelocity = mean(velocities, 2); 
+            meanFiringRate = mean(firingRates, 2);
+
+            meanAcceleration = mean(acceleration,2);
+            meanFiringRateChange = mean(firingRateChanges, 2);
+
+            currentDirection = velocities ./ (vecnorm(velocities) + 1e-6);
+            cosTheta = idealDirections' * currentDirection; % (8xT)
+            cosTheta = mean(cosTheta, 2);
             
             for t = 1:size(handPos,2)-1
-                X = [X, [handPos(1,t); handPos(2,t); velocities(:,t); acceleration(:,t)]];
-                Z = [Z, [firingRates(:,t); firingRateChanges(:,t)]];
+                X = [X, [handPos(1,t); handPos(2,t); velocities(:,t); acceleration(:,t); meanVelocity; meanAcceleration; cosTheta]]; 
+                Z = [Z, [firingRates(:,t); firingRateChanges(:,t); meanFiringRate; meanFiringRateChange]];
+
             end
         end
     end
@@ -52,7 +72,9 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
     W = cov(X(:,2:end)' - (A * X(:,1:end-1))');
     W = W + 1e-3 * eye(size(W));
     %H = (Z * X') / (X * X');
-    H = (Z * X') / (X * X' + 0.01 * eye(size(X,1)));
+    %H = (Z * X') / (X * X' + 0.01 * eye(size(X,1)));
+    lambda = 1e-3; % Regularization parameter
+    H = (Z * X') / (X * X' + lambda * eye(size(X,1)));
     Q = cov(Z' - (H * X)');
     Q = Q * 0.7; 
  
