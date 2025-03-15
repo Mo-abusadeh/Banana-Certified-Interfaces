@@ -22,6 +22,7 @@ fprintf('Testing the continuous position estimator...')
 
 meanSqError = 0;
 n_predictions = 0;  
+totalTime = 0;
 
 figure
 hold on
@@ -29,6 +30,7 @@ axis square
 grid
 
 % Train Model
+tic;
 modelParameters = positionEstimatorTraining_kalman(trainingData);
 
 for tr=1:size(testData,1)
@@ -66,9 +68,15 @@ for tr=1:size(testData,1)
     end
 end
 
+elapsedTime = toc;
+totalTime = totalTime + elapsedTime;
+
 legend('Decoded Position', 'Actual Position')
 
 RMSE = sqrt(meanSqError/n_predictions) 
+fprintf('Total time taken: %.4f seconds\n', totalTime);
+fprintf('Average time per prediction: %.4f seconds\n', totalTime / n_predictions);
+Weighted_rank = 0.9 * RMSE + 0.1 * totalTime
 
 rmpath(genpath('Banana-Certified Interfaces'))
 
