@@ -13,8 +13,8 @@ function [x, y] = positionEstimator_kalman(testData, modelParameters)
     binSize = 395;
     
     % Initial estimates
-    x_est = [testData.startHandPos(1); testData.startHandPos(2); avgVelocity; 0; 0; 0; 0; 0; 0; 0; 0;0;0;0;0;0;0];
-    P_est = eye(18);
+    x_est = [testData.startHandPos(1); testData.startHandPos(2); avgVelocity; 0; 0; 0; 0];
+    P_est = eye(8);
     
     % Compute smoothed firing rates
     cumsumSpikes = cumsum(spikes, 2);
@@ -31,10 +31,10 @@ function [x, y] = positionEstimator_kalman(testData, modelParameters)
     meanFiringRateChange = mean(firingRateChanges, 2);
 
 
-    Z = [firingRates; firingRateChanges; repmat(meanFiringRate, 1, size(firingRates, 2)); repmat(meanFiringRateChange, 1, size(firingRateChanges, 2))];  
+    Z = [firingRates; firingRateChanges; repmat(meanFiringRate, 1, size(firingRates, 2))];  
    
-    size_a = size(A)
-    size_x = size(x_est)
+    size_a = size(A);
+    size_x = size(x_est);
     % Batch Kalman filter update
     X_pred = A * x_est;
     P_pred = A * P_est * A' + W;

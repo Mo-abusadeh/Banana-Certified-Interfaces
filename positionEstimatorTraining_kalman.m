@@ -59,8 +59,8 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
             cosTheta = mean(cosTheta, 2);
             
             for t = 1:size(handPos,2)-1
-                X = [X, [handPos(1,t); handPos(2,t); velocities(:,t); acceleration(:,t); meanVelocity; meanAcceleration; cosTheta]]; 
-                Z = [Z, [firingRates(:,t); firingRateChanges(:,t); meanFiringRate; meanFiringRateChange]];
+                X = [X, [handPos(1,t); handPos(2,t); velocities(:,t); acceleration(:,t); meanVelocity]]; 
+                Z = [Z, [firingRates(:,t); firingRateChanges(:,t); meanFiringRate]];
 
             end
         end
