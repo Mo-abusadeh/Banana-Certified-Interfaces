@@ -33,8 +33,6 @@ function [x, y] = positionEstimator_kalman(testData, modelParameters)
 
     Z = [firingRates; firingRateChanges; repmat(meanFiringRate, 1, size(firingRates, 2)); repmat(meanFiringRateChange, 1, size(firingRateChanges, 2))];  
    
-    size_a = size(A)
-    size_x = size(x_est)
     % Batch Kalman filter update
     X_pred = A * x_est;
     P_pred = A * P_est * A' + W;

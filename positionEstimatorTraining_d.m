@@ -1,20 +1,24 @@
-function modelParameters = positionEstimatorTraining_kalman(trainingData)
-    % Extract number of trials and neurons
+function modelParameters = positionEstimatorTraining_d(trainingData)
+    % calculates 8 model parameters (Kalman) for each of the 8 angles
+    
+    % Extract number of trials, angles, and neurons
     numTrials = length(trainingData);
+    numAngles = size(trainingData, 2);
     numNeurons = size(trainingData(1,1).spikes, 1);
-    
-    % Define matrices for Kalman filter
-    X = []; % State matrix (position, velocity)
-    Z = []; % Observation matrix (spike rates)
-    trainingVelocities = [];
 
-    idealDirections = [cosd(0:45:315); sind(0:45:315)]; 
-    
-    % Collect training data
+    % Struct to store separate Kalman parameters for each angle
+    angle_models = struct();
+
     binSize = 390;
-    for trial = 1:numTrials
-        for angle = 1:size(trainingData, 2)
-            spikes = trainingData(trial, angle).spikes;
+    idealDirections = [cosd(0:45:315); sind(0:45:315)];
+
+    for angle = 1:numAngles
+        X = []; % State matrix (position, velocity, acceleration)
+        Z = []; % Observation matrix (spike rates)
+        trainingVelocities = [];
+
+        for trial = 1:numTrials
+             spikes = trainingData(trial, angle).spikes;
             handPos = trainingData(trial, angle).handPos;
             
             % % Compute velocities
@@ -64,26 +68,27 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
 
             end
         end
-    end
     
-    % Estimate Kalman parameters
-    A = (X(:,2:end) * X(:,1:end-1)') / (X(:,1:end-1) * X(:,1:end-1)');
-    A = A * 0.3;
-    W = cov(X(:,2:end)' - (A * X(:,1:end-1))');
-    W = W + 1e-3 * eye(size(W));
-    %H = (Z * X') / (X * X');
-    %H = (Z * X') / (X * X' + 0.01 * eye(size(X,1)));
-    lambda = 1e-3; % Regularization parameter
-    disp(['Size of Z before computing H: ', num2str(size(Z))]);  % Should be 98 × timeSteps
-    disp(['Size of X before computing H: ', num2str(size(X))]);  % Should be 18 × timeSteps
-    H = (Z * X') / (X * X' + lambda * eye(size(X,1)));
-    Q = cov(Z' - (H * X)');
-    Q = Q * 0.7; 
- 
-    % Store parameters
-    modelParameters.A = A;
-    modelParameters.W = W;
-    modelParameters.H = H;
-    modelParameters.Q = Q;
-    modelParameters.avgVelocity = mean(trainingVelocities, 2);
-end    
+        % Estimate Kalman parameters
+        A = (X(:,2:end) * X(:,1:end-1)') / (X(:,1:end-1) * X(:,1:end-1)');
+        A = A * 0.3;
+        W = cov(X(:,2:end)' - (A * X(:,1:end-1))');
+        W = W + 1e-3 * eye(size(W));
+        %H = (Z * X') / (X * X');
+        %H = (Z * X') / (X * X' + 0.01 * eye(size(X,1)));
+        lambda = 1e-3; % Regularization parameter
+        H = (Z * X') / (X * X' + lambda * eye(size(X,1)));
+        Q = cov(Z' - (H * X)');
+        Q = Q * 0.7; 
+
+        % Store models per angle
+        angle_models(angle).A = A;
+        angle_models(angle).W = W;
+        angle_models(angle).H = H;
+        angle_models(angle).Q = Q;
+    end
+
+    % Store all angle-specific models
+    modelParameters.angle_models = angle_models;
+end
+

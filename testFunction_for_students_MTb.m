@@ -22,7 +22,6 @@ fprintf('Testing the continuous position estimator...')
 
 meanSqError = 0;
 n_predictions = 0;  
-totalTime = 0;
 
 figure
 hold on
@@ -30,8 +29,7 @@ axis square
 grid
 
 % Train Model
-tic;
-modelParameters = positionEstimatorTraining_kalman(trainingData);
+modelParameters = positionEstimatorTraining_k(trainingData);
 
 for tr=1:size(testData,1)
     display(['Decoding block ',num2str(tr),' out of ',num2str(size(testData,1))]);
@@ -42,17 +40,18 @@ for tr=1:size(testData,1)
         times=320:20:size(testData(tr,direc).spikes,2);
         
         for t=times
+
             past_current_trial.trialId = testData(tr,direc).trialId;
             past_current_trial.spikes = testData(tr,direc).spikes(:,1:t); 
             past_current_trial.decodedHandPos = decodedHandPos;
 
             past_current_trial.startHandPos = testData(tr,direc).handPos(1:2,1); 
             
-            if nargout('positionEstimator_kalman') == 3
-                [decodedPosX, decodedPosY, newParameters] = positionEstimator_kalman(past_current_trial, modelParameters);
+            if nargout('positionEstimator_k') == 3
+                [decodedPosX, decodedPosY, newParameters] = positionEstimator_k(past_current_trial, modelParameters);
                 modelParameters = newParameters;
-            elseif nargout('positionEstimator_kalman') == 2
-                [decodedPosX, decodedPosY] = positionEstimator_kalman(past_current_trial, modelParameters);
+            elseif nargout('positionEstimator_k') == 2
+                [decodedPosX, decodedPosY] = positionEstimator_k(past_current_trial, modelParameters);
             end
             
             decodedPos = [decodedPosX; decodedPosY];
@@ -68,15 +67,9 @@ for tr=1:size(testData,1)
     end
 end
 
-elapsedTime = toc;
-totalTime = totalTime + elapsedTime;
-
 legend('Decoded Position', 'Actual Position')
 
 RMSE = sqrt(meanSqError/n_predictions) 
-fprintf('Total time taken: %.4f seconds\n', totalTime);
-fprintf('Average time per prediction: %.4f seconds\n', totalTime / n_predictions);
-Weighted_rank = 0.9 * RMSE + 0.1 * totalTime
 
 rmpath(genpath('Banana-Certified Interfaces'))
 
