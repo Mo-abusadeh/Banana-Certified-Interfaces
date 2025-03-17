@@ -6,13 +6,13 @@
 
 function RMSE = testFunction_for_students_MTb(teamName)
 
-load monkeydata0.mat
+load monkeydata_training.mat
 
 % Set random number generator
 rng(2013);
 ix = randperm(length(trial));
 
-addpath(teamName);
+addpath('Banana-Certified Interfaces');
 
 % Select training and testing data (you can choose to split your data in a different way if you wish)
 trainingData = trial(ix(1:50),:);
@@ -29,7 +29,7 @@ axis square
 grid
 
 % Train Model
-modelParameters = positionEstimatorTraining(trainingData);
+modelParameters = positionEstimatorTraining_kalman(trainingData);
 
 for tr=1:size(testData,1)
     display(['Decoding block ',num2str(tr),' out of ',num2str(size(testData,1))]);
@@ -46,11 +46,11 @@ for tr=1:size(testData,1)
 
             past_current_trial.startHandPos = testData(tr,direc).handPos(1:2,1); 
             
-            if nargout('positionEstimator') == 3
-                [decodedPosX, decodedPosY, newParameters] = positionEstimator(past_current_trial, modelParameters);
+            if nargout('positionEstimator_kalman') == 3
+                [decodedPosX, decodedPosY, newParameters] = positionEstimator_kalman(past_current_trial, modelParameters);
                 modelParameters = newParameters;
-            elseif nargout('positionEstimator') == 2
-                [decodedPosX, decodedPosY] = positionEstimator(past_current_trial, modelParameters);
+            elseif nargout('positionEstimator_kalman') == 2
+                [decodedPosX, decodedPosY] = positionEstimator_kalman(past_current_trial, modelParameters);
             end
             
             decodedPos = [decodedPosX; decodedPosY];
@@ -70,6 +70,6 @@ legend('Decoded Position', 'Actual Position')
 
 RMSE = sqrt(meanSqError/n_predictions) 
 
-rmpath(genpath(teamName))
+rmpath(genpath('Banana-Certified Interfaces'))
 
 end

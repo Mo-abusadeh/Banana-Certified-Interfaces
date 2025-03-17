@@ -3,20 +3,24 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
     % Extract number of trials and neurons
     numTrials = length(trainingData);
     numNeurons = size(trainingData(1,1).spikes, 1);
-    
-    % Define matrices for Kalman filter
-    X = []; % State matrix (position, velocity, acceleration)
-    Z = []; % Observation matrix (spike rates)
-    trainingVelocities = [];
+    numAngles = size(trainingData, 2);
     
     % Load Naive Bayes classifier
     NBModel = Naive_Bayes(trainingData); 
     
+    % Initialize struct to store angle-specific Kalman parameters
+    modelParameters = struct();
+    
     % Define bin size for feature extraction
     binSize = 390;
 
-    for trial = 1:numTrials
-        for angle = 1:size(trainingData, 2)
+    for angle = 1:numAngles
+        X = [];  % State matrix (position, velocity)
+        Z = [];  % Observation matrix (spike rates)
+        trainingVelocities = [];
+
+        for trial = 1:numTrials
+
             spikes = trainingData(trial, angle).spikes; % (numNeurons x timeBins)
             handPos = trainingData(trial, angle).handPos; % (3 x timeBins)
             
@@ -31,8 +35,8 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
             trainingVelocities = [trainingVelocities, velocities];
 
             % Compute acceleration
-            acceleration = diff(velocities, 1, 2);
-            acceleration = [zeros(2, 1), acceleration];
+            %acceleration = diff(velocities, 1, 2);
+            %acceleration = [zeros(2, 1), acceleration];
 
             % Compute firing rates
             cumsumSpikes = cumsum(spikes, 2);
@@ -60,43 +64,44 @@ function modelParameters = positionEstimatorTraining_kalman(trainingData)
             end
 
             % Compute mean values for each feature
-            meanVelocity = mean(velocities, 2); 
+            %meanVelocity = mean(velocities, 2); 
             meanFiringRate = mean(firingRates, 2);
-            meanAcceleration = mean(acceleration, 2);
-            meanFiringRateChange = mean(firingRateChanges, 2);
+            %meanAcceleration = mean(acceleration, 2);
+            %meanFiringRateChange = mean(firingRateChanges, 2);
             meanISI = mean(ISI_mean);
-            varISI = mean(ISI_var);
-
-            % Classify angle using Naive Bayes model
-            angle_predicted = classifyAngle(spikes, NBModel);  
+            varISI = mean(ISI_var); 
 
             % Store feature matrices
             for t = 1:size(handPos,2)-1
-                X = [X, [handPos(1,t); handPos(2,t); velocities(:,t); acceleration(:,t); meanVelocity]];
-                Z = [Z, [firingRates(:,t); firingRateChanges(:,t); meanFiringRate; meanISI; varISI; angle_predicted]];
+                X = [X, [handPos(1,t); handPos(2,t); velocities(:,t)]];
+                Z = [Z, [firingRates(:,t); meanFiringRate; meanISI; varISI]];
             end
         end
+
+        % Estimate Kalman filter parameters
+        A = (X(:,2:end) * X(:,1:end-1)') / (X(:,1:end-1) * X(:,1:end-1)');
+        A = A * 0.3;
+        W = cov(X(:,2:end)' - (A * X(:,1:end-1))');
+        W = W + 1e-3 * eye(size(W));
+    
+        % Compute observation matrix H with regularization
+        lambda = 1e-3; % Regularization parameter
+        H = (Z * X') / (X * X' + lambda * eye(size(X,1)));
+    
+        % Compute observation noise covariance matrix
+        Q = cov(Z' - (H * X)');
+        Q = Q * 0.7;
+    
+        % Store model parameters
+        modelParameters(angle).A = A;
+        modelParameters(angle).W = W;
+        modelParameters(angle).H = H;
+        modelParameters(angle).Q = Q;
+        modelParameters(angle).avgVelocity = mean(trainingVelocities, 2);
     end
 
-    % Estimate Kalman filter parameters
-    A = (X(:,2:end) * X(:,1:end-1)') / (X(:,1:end-1) * X(:,1:end-1)');
-    A = A * 0.3;
-    W = cov(X(:,2:end)' - (A * X(:,1:end-1))');
-    W = W + 1e-3 * eye(size(W));
-
-    % Compute observation matrix H with regularization
-    lambda = 1e-3; % Regularization parameter
-    H = (Z * X') / (X * X' + lambda * eye(size(X,1)));
-
-    % Compute observation noise covariance matrix
-    Q = cov(Z' - (H * X)');
-    Q = Q * 0.7;
-
-    % Store model parameters
-    modelParameters.A = A;
-    modelParameters.W = W;
-    modelParameters.H = H;
-    modelParameters.Q = Q;
-    modelParameters.avgVelocity = mean(trainingVelocities, 2);
-    modelParameters.classifier = NBModel;
+    % Store the classifier
+    for i = 1:numAngles
+        modelParameters(i).classifier = NBModel;
+    end
 end
