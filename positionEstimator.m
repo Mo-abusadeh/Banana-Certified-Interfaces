@@ -1,28 +1,18 @@
 function [x, y] = positionEstimator(test_data, modelParameters)
-    % Extract trial ID and spikes from the test data
-    spikes = test_data.spikes; % Size: 98 x N, where N is current time
-    num_neurons = size(spikes, 1); % 98 neurons
-    num_timebins = size(spikes, 2); % Time steps (current time, t)
-
-    % Calculate the total firing rate for all neurons in the current trial
-    total_spikes = sum(spikes, 2); % Sum of spikes for all neurons (98 x 1)
-    firing_rate = sum(total_spikes) / num_timebins; % Total spikes / time bins
+    spikes = test_data.spikes;
     
-    % Calculate the cumulative Fano factor across all neurons
-    spike_counts = sum(spikes, 2); % Spike count for each neuron (98 x 1)
-    mean_spikes = mean(spike_counts); % Mean spike count across all neurons
-    var_spikes = var(spike_counts);  % Variance of spike counts across all neurons
-    fano_factor = var_spikes / mean_spikes; % Cumulative Fano factor for the trial
+    % Compute cum spike counts as features
+    cum_spikes = sum(spikes, 2)';
 
-    % Combine the firing rate and Fano factor into a feature vector
-    features = [firing_rate; fano_factor]; % Features for this trial
+    % Predict velocity
+    xdot = cum_spikes * modelParameters.Wx;
+    ydot = cum_spikes * modelParameters.Wy;
 
-    % Predict hand positions (x and y) using the trained regressors
-    predicted_x = predict(modelParameters.regressor_x, features');
-    predicted_y = predict(modelParameters.regressor_y, features');
+    % Euler's integration to predict position (reduces errors)
+    start_pos = test_data.startHandPos;
+    duration = size(spikes, 2);
 
-    % Return the predicted x and y hand positions
-    x = predicted_x;
-    y = predicted_y;
+    x = start_pos(1) + xdot * duration;
+    y = start_pos(2) + ydot * duration;
 end
 
